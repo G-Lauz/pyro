@@ -382,13 +382,43 @@ class DynamicCameraBoatRenderer(Renderer):
             end_idx = 2 * vertical_lines.shape[0] + i + horizontal_lines.shape[0]
             pygame.draw.line(self.screen, grid_color, points[start_idx], points[end_idx], 1)
 
+    def render_trajectory(self, domain, trajectory, kinematic: Kinematic):
+        trajectory_color = (0, 255, 0)
 
-    def render(self, geometry: Geometry, kinematic: Kinematic, input_force: numpy.ndarray):
+        # Scale en center the trajectory
+        domain_range = numpy.diff(domain, axis=1).reshape(-1)
+        scale = min(self.screen_size / domain_range)
+        offset = numpy.array(self.screen_size) // 2
+
+        diagonal = numpy.linalg.norm(self.screen_size)
+        difference = diagonal - domain_range
+
+        position = kinematic.positions[:2]
+
+        # Trajectory points decomposed in points coordinates
+        trajectory_points = trajectory * scale + offset + position * scale
+        points = numpy.hstack((trajectory_points, numpy.ones((trajectory_points.shape[0], 1)))) # Homogeneous coordinates
+
+        # Rotate and center the grid to match the boat heading
+        angle = -kinematic.positions[2] + numpy.pi / 2
+        x_offset = offset[0] - numpy.cos(angle) * offset[0] + numpy.sin(angle) * offset[1]
+        y_offset = offset[1] - numpy.sin(angle) * offset[0] - numpy.cos(angle) * offset[1]
+        R = numpy.array([
+            [numpy.cos(angle), -numpy.sin(angle), x_offset],
+            [numpy.sin(angle), numpy.cos(angle), y_offset],
+            [0, 0, 1]
+        ])
+        points = (R @ points.T).T[:, :2]
+
+        # draw the trajectory
+        pygame.draw.lines(self.screen, trajectory_color, False, points, width=5)
+
+    def render(self, geometry: Geometry, kinematic: Kinematic, input_force: numpy.ndarray, trajectory):
         self.screen.fill((255, 255, 255))
 
         # Draw x, y line center on the screen (debugging)
-        pygame.draw.line(self.screen, (0, 255, 0), (0, self.screen_size[1]//2), (self.screen_size[0], self.screen_size[1]//2), 3)
-        pygame.draw.line(self.screen, (0, 255, 0), (self.screen_size[0]//2, 0), (self.screen_size[0]//2, self.screen_size[1]), 3)
+        # pygame.draw.line(self.screen, (0, 255, 0), (0, self.screen_size[1]//2), (self.screen_size[0], self.screen_size[1]//2), 3)
+        # pygame.draw.line(self.screen, (0, 255, 0), (self.screen_size[0]//2, 0), (self.screen_size[0]//2, self.screen_size[1]), 3)
 
         positions = kinematic.positions
         velocities = kinematic.velocities
@@ -400,6 +430,7 @@ class DynamicCameraBoatRenderer(Renderer):
         domain = domain + numpy.array([[positions[0]],[positions[1]]])
 
         self.render_grid(domain, kinematic)
+        self.render_trajectory(domain, trajectory, kinematic)
         self.render_info(positions, velocities, input_force)
         self.render_boat(domain, geometry.shape)
         self.render_force(domain, input_force, geometry, positions)

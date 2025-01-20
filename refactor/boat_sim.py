@@ -35,6 +35,11 @@ def main():
     dt = clock.tick(60) / 1000
     next_states = numpy.array([0, 0, 0, 0, 0, 0])
 
+    # Sinusoidal 2D trajectory
+    domain = numpy.linspace(0, 30, 100)
+    codomain = 10 * numpy.sin(1/16 * numpy.pi * domain) + 5 * numpy.sin(1/8 * numpy.pi * domain)
+    trajectory = numpy.array([domain, codomain]).T
+
     while running:
         
         for event in pygame.event.get():
@@ -53,7 +58,7 @@ def main():
 
         next_states = simulation.step(next_states, input, dt)
         # renderer.render(geometry, next_states, input_force=input)
-        renderer.render(geometry, simulation._system.kinematic, input_force=input)
+        renderer.render(geometry, simulation._system.kinematic, input_force=input, trajectory=trajectory)
 
         dt = clock.tick(60) / 1000
 
