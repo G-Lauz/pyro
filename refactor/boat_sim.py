@@ -8,9 +8,14 @@ import pygame
 
 from refactor.simulation import ContinuousSimulation
 from refactor.system import MechanicalSystem
-from refactor.renderer import PygameRenderer, DynamicCameraBoatRenderer
 
-from refactor.boat import BoatGeometry, BoatKinematic, BoatParameters
+from refactor.boat import (
+    BoatGeometry,
+    BoatKinematic,
+    BoatParameters,
+    FixedCameraBoatRenderer,
+    DynamicCameraBoatRenderer
+)
 
 
 def main():
@@ -23,7 +28,7 @@ def main():
 
     simulation = ContinuousSimulation(system=system)
 
-    # renderer = PygameRenderer()
+    # renderer = FixedCameraBoatRenderer()
     renderer = DynamicCameraBoatRenderer()
 
     # Simulation
