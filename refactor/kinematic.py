@@ -8,8 +8,8 @@ class Kinematic(abc.ABC):
     positions: numpy.ndarray # q
     velocities: numpy.ndarray # dq
 
-    states_upper_bound: float
-    states_lower_bound: float
+    states_upper_bound: numpy.ndarray
+    states_lower_bound: numpy.ndarray
 
     @property
     def states(self):

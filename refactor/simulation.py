@@ -7,7 +7,7 @@ from refactor.system import ContinuousDynamicSystem
 
 class Simulation(abc.ABC):
     @abc.abstractmethod
-    def step(self, input, dt=0.01):
+    def step(self, input_force, dt=0.01):
         pass
 
     @abc.abstractmethod
@@ -20,8 +20,8 @@ class ContinuousSimulation(Simulation):
         super().__init__()
         self._system = system
     
-    def step(self, states, input, dt=0.01):
-        return self._system.compute_dynamics(input, dt)
+    def step(self, input_force, dt=0.01):
+        return self._system.compute_dynamics(input_force, dt)
 
     def run(self, controller, dt=0.1, steps=1000):
         """

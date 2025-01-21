@@ -59,11 +59,11 @@ def main():
             # See https://www.pygame.org/docs/ref/joystick.html#xbox-360-controller-pygame-2-x for more information
             x_force = joystick.get_axis(0) * (parameters.inputs_upper_bound[1] - parameters.inputs_lower_bound[1]) * 0.5
             y_force = joystick.get_axis(1) * (parameters.inputs_upper_bound[0] - parameters.inputs_lower_bound[0]) * 0.5
-            input = numpy.array([-y_force, -x_force])
+            input_force = numpy.array([-y_force, -x_force])
 
-        next_states = simulation.step(next_states, input, dt)
+        simulation.step(input_force, dt)
         # renderer.render(geometry, next_states, input_force=input)
-        renderer.render(geometry, simulation._system.kinematic, input_force=input, trajectory=trajectory)
+        renderer.render(geometry, simulation._system.kinematic, input_force=input_force, trajectory=trajectory)
 
         dt = clock.tick(60) / 1000
 
