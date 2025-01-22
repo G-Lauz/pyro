@@ -2,7 +2,9 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+print(os.path.join(os.path.dirname(__file__), '..'))
 
+import clipy
 import numpy
 import pygame
 
@@ -10,6 +12,7 @@ from refactor.simulation import ContinuousSimulation
 from refactor.system import MechanicalSystem
 
 from refactor.boat import (
+    Boat2DConfiguration,
     BoatGeometry,
     BoatKinematic,
     BoatParameters,
@@ -17,12 +20,14 @@ from refactor.boat import (
     DynamicCameraBoatRenderer
 )
 
-
-def main():
+@clipy.command(usage="python boat_sim.py --config <path>", description="Boat2D simulation")
+@clipy.argument("config", required=True, type=str, help="Path to the configuration file")
+def main(config: str):
     # Boat definition
-    geometry = BoatGeometry()
-    kinematic = BoatKinematic()
-    parameters = BoatParameters()
+    configuration = Boat2DConfiguration(config_file=config)
+    geometry = BoatGeometry(configuration)
+    kinematic = BoatKinematic(configuration)
+    parameters = BoatParameters(configuration)
 
     system = MechanicalSystem(parameters=parameters, kinematic=kinematic)
 
@@ -38,7 +43,6 @@ def main():
     joysticks = []
 
     dt = clock.tick(60) / 1000
-    next_states = numpy.array([0, 0, 0, 0, 0, 0])
 
     # Sinusoidal 2D trajectory
     domain = numpy.linspace(0, 30, 100)

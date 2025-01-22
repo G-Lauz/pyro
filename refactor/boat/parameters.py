@@ -1,39 +1,40 @@
 import numpy
 
-from refactor.parameters import MechanicalSystemParameters
+from .configuration import Boat2DConfiguration
 from .kinematic import BoatKinematic
+from refactor.parameters import MechanicalSystemParameters
 
 
 class BoatParameters(MechanicalSystemParameters):
-    def __init__(self):
+    def __init__(self, config: Boat2DConfiguration):
         super().__init__()
 
         # Dynamic properties
-        self.dof                = 3 # x, y, theta
+        self.dof                = config.parameters.dof # x, y, theta
 
-        self.force_inputs       = 2 # F_x, F_y
-        self.mass               = 1000.0
-        self.inertia            = 1000.0
-        self.thrust_offset      = 3.0 # Distance between CG and Thrust vector # TODO: duplicated with geometry
+        self.force_inputs       = config.parameters.force_inputs # F_x, F_y
+        self.mass               = config.parameters.mass
+        self.inertia            = config.parameters.inertia
+        self.thrust_offset      = config.geometry.thrust_offset # Distance between CG and Thrust vector
 
         # Inputs bounds
-        self.inputs_upper_bound = numpy.array([10000, 1000])
-        self.inputs_lower_bound = numpy.array([-10000, -1000])
+        self.inputs_upper_bound = numpy.array(config.parameters.input_upper_bound)
+        self.inputs_lower_bound = numpy.array(config.parameters.input_lower_bound)
         
         # Hydrodynamic coefficients
 
         # linear damping
-        self.damping_coef = numpy.array([ 2000.0, 20000.0, 10000.0 ])
+        self.damping_coef = numpy.array(config.parameters.linear_damping_coefficients)
 
         # quadratic damping
-        self.Cx_max = 0.5 
-        self.Cy_max = 0.6
-        self.Cm_max = 0.1
+        self.Cx_max = config.parameters.quadratic_damping_coefficients.cx_max
+        self.Cy_max = config.parameters.quadratic_damping_coefficients.cy_max
+        self.Cm_max = config.parameters.quadratic_damping_coefficients.cm_max
 
-        self.water_density      = 1000.0
-        self.lateral_area       = self.thrust_offset * 2
-        self.frontal_area       = 0.25 * self.lateral_area
-        self.length_over_all    = self.thrust_offset * 2
+        self.water_density      = config.parameters.water_density
+        self.lateral_area       = config.geometry.lateral_area
+        self.frontal_area       = config.geometry.frontal_area
+        self.length_over_all    = config.geometry.length_overall
 
 
     def inertia_matrix(self, *args, **kwargs):

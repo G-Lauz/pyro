@@ -1,21 +1,22 @@
 import numpy
 
+from .configuration import Boat2DConfiguration
 from refactor.kinematic import Kinematic
     
 
 class BoatKinematic(Kinematic):
-    def __init__(self):
+    def __init__(self, config: Boat2DConfiguration):
         super().__init__()
-        self.x = 0.0
-        self.y = 0.0
-        self.theta = 0.0
+        self.x = config.kinematic.x
+        self.y = config.kinematic.y
+        self.theta = config.kinematic.theta
 
-        self.dx = 0.0
-        self.dy = 0.0
-        self.dtheta = 0.0
+        self.dx = config.kinematic.dx
+        self.dy = config.kinematic.dy
+        self.dtheta = config.kinematic.dtheta
 
-        self.states_upper_bound = numpy.array([10, 10, numpy.pi, 10, 10, 10])
-        self.states_lower_bound = numpy.array([-10, -10, -numpy.pi, -10, -10, -10])
+        self.states_upper_bound = numpy.array(config.parameters.state_upper_bound)
+        self.states_lower_bound = numpy.array(config.parameters.state_lower_bound)
 
     @property
     def positions(self):

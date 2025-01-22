@@ -1,16 +1,17 @@
 import numpy
 
+from .configuration import Boat2DConfiguration
 from refactor.geometry import Geometry
 
 
 class BoatGeometry(Geometry):
-    def __init__(self):
+    def __init__(self, config: Boat2DConfiguration):
         super().__init__()
-        self.thrust_offset      = 3.0 # Distance between CG and Thrust vector # TODO: duplicated with geometry
+        self.thrust_offset      = config.geometry.thrust_offset
 
-        self.lateral_area       = self.thrust_offset * 2
-        self.frontal_area       = 0.25 * self.lateral_area
-        self.length_over_all    = self.thrust_offset * 2
+        self.lateral_area       = config.geometry.lateral_area
+        self.frontal_area       = config.geometry.frontal_area
+        self.length_over_all    = config.geometry.length_overall
 
         self.width = self.frontal_area
         self.height = self.length_over_all
