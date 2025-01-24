@@ -2,7 +2,7 @@ import abc
 
 import numpy
 
-from refactor.system import ContinuousDynamicSystem
+from pyro.refactor.system import ContinuousDynamicSystem
 
 
 class Simulation(abc.ABC):

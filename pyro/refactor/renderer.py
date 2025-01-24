@@ -2,8 +2,8 @@ import abc
 
 import numpy
 
-from refactor.geometry import Geometry
-from refactor.kinematic import Kinematic
+from pyro.refactor.geometry import Geometry
+from pyro.refactor.kinematic import Kinematic
 
 
 class Renderer(abc.ABC):

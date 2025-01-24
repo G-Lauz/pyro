@@ -3,7 +3,7 @@ from typing import List
 
 import dataclasses
 
-from refactor.configuration import Configuration
+from pyro.refactor.configuration import Configuration
 
 
 @dataclasses.dataclass

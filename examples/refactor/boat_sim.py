@@ -1,17 +1,11 @@
-# Patch to load module
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-print(os.path.join(os.path.dirname(__file__), '..'))
-
 import clipy
 import numpy
 import pygame
 
-from refactor.simulation import ContinuousSimulation
-from refactor.system import MechanicalSystem
+from pyro.refactor.simulation import ContinuousSimulation
+from pyro.refactor.system import MechanicalSystem
 
-from refactor.boat import (
+from pyro.refactor.boat import (
     Boat2DConfiguration,
     BoatGeometry,
     BoatKinematic,

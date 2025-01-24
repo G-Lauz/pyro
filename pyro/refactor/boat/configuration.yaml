@@ -1,0 +1,35 @@
+name: Boat2D
+parameters:
+  dof: 3 # x, y, theta
+
+  state_upper_bound: [10.0, 10.0, 3.141592653589793, 10, 10, 10]
+  state_lower_bound: [-10.0, -10.0, -3.141592653589793, -10, -10, -10]
+
+  input_upper_bound: [10000, 1000]
+  input_lower_bound: [-10000, -1000]
+
+  force_inputs: 2 # F_x, F_y
+  mass: 1000.0
+  inertia: 1000.0
+
+  linear_damping_coefficients: [2000.0, 20000.0, 10000.0]
+  quadratic_damping_coefficients:
+    cx_max: 0.5
+    cy_max: 0.6
+    cm_max: 0.1
+
+  water_density: 1000.0
+
+kinematic:
+  x: 0.0 # initial states
+  y: 0.0
+  theta: 0.0
+  dx: 0.0
+  dy: 0.0
+  dtheta: 0.0
+
+geometry:
+  thrust_offset: 3.0 # distance from center of mass to thrust point
+  lateral_area: 6.0
+  frontal_area: 1.5
+  length_overall: 6.0

@@ -2,7 +2,7 @@ import numpy
 
 from .configuration import Boat2DConfiguration
 from .kinematic import BoatKinematic
-from refactor.parameters import MechanicalSystemParameters
+from pyro.refactor.parameters import MechanicalSystemParameters
 
 
 class BoatParameters(MechanicalSystemParameters):

@@ -1,7 +1,7 @@
 import numpy
 
 from .configuration import Boat2DConfiguration
-from refactor.geometry import Geometry
+from pyro.refactor.geometry import Geometry
 
 
 class BoatGeometry(Geometry):

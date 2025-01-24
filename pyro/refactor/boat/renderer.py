@@ -3,10 +3,10 @@ from typing import overload
 import numpy
 import pygame
 
-from refactor.geometry import Geometry
-from refactor.kinematic import Kinematic
-from refactor.renderer import Renderer
-from refactor.utils import Transformation2D
+from pyro.refactor.geometry import Geometry
+from pyro.refactor.kinematic import Kinematic
+from pyro.refactor.renderer import Renderer
+from pyro.refactor.utils import Transformation2D
 
 
 class BoatRenderer(Renderer):

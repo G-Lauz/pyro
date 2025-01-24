@@ -2,8 +2,8 @@ import abc
 
 import numpy
 
-from refactor.parameters import MechanicalSystemParameters
-from refactor.kinematic import Kinematic
+from pyro.refactor.parameters import MechanicalSystemParameters
+from pyro.refactor.kinematic import Kinematic
 
 
 class ContinuousDynamicSystem(abc.ABC):

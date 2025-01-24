@@ -1,7 +1,7 @@
 import numpy
 
 from .configuration import Boat2DConfiguration
-from refactor.kinematic import Kinematic
+from pyro.refactor.kinematic import Kinematic
     
 
 class BoatKinematic(Kinematic):
