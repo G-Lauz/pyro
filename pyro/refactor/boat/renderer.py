@@ -3,6 +3,7 @@ from typing import overload
 import numpy
 import pygame
 
+from pyro.refactor.system import MechanicalSystem
 from pyro.refactor.geometry import Geometry
 from pyro.refactor.kinematic import Kinematic
 from pyro.refactor.renderer import Renderer
@@ -152,24 +153,24 @@ class FixedCameraBoatRenderer(BoatRenderer):
         transformation_matrix = Transformation2D.translate_rotate_matrix(offset, force_direction)
         return Transformation2D.transform_points(transformation_matrix, arrow_points)
 
-    def render(self, geometry: Geometry, kinematic: Kinematic, input_force: numpy.ndarray, trajectory: numpy.ndarray = None):
+    def render(self, system: MechanicalSystem, input_force: numpy.ndarray, trajectory: numpy.ndarray = None):
         self.screen.fill(self.background_color)
 
-        domain = kinematic.get_domain(dynamic=True)[:2] # get x, y domain
+        domain = system.kinematic.get_domain(dynamic=True)[:2] # get x, y domain
 
         self.render_grid(domain)
-        self.render_info(kinematic, input_force)
+        self.render_info(system.kinematic, input_force)
 
-        transformation_matrix = Transformation2D.translate_rotate_matrix(kinematic.positions[:2], kinematic.positions[2])
+        transformation_matrix = Transformation2D.translate_rotate_matrix(system.kinematic.positions[:2], system.kinematic.positions[2])
 
         # Draw the boat
-        boat_shape = geometry.shape
+        boat_shape = system.geometry.shape
         boat_shape = Transformation2D.transform_points(transformation_matrix, boat_shape)
         boat_points = self._points_to_screen(domain, boat_shape)
         pygame.draw.polygon(self.screen, self.boat_color, boat_points)
 
         # Draw the input force arrow
-        arrow_points = self.get_vector_force(input_force, geometry)
+        arrow_points = self.get_vector_force(input_force, system.geometry)
         arrow_points = Transformation2D.transform_points(transformation_matrix, arrow_points)
         arrow_points = self._points_to_screen(domain, arrow_points)
         pygame.draw.lines(self.screen, self.arrow_color, True, arrow_points, 3)
@@ -254,15 +255,18 @@ class DynamicCameraBoatRenderer(BoatRenderer):
         # draw the trajectory
         pygame.draw.lines(self.screen, self.trajectory_color, False, points, width=5)
 
-    def render(self, geometry: Geometry, kinematic: Kinematic, input_force: numpy.ndarray, trajectory):
+    def render(self, system: MechanicalSystem, input_force: numpy.ndarray, trajectory=None):
         self.screen.fill(self.background_color)
 
-        domain = kinematic.get_domain(dynamic=True)[:2] # get x, y domain
+        domain = system.kinematic.get_domain(dynamic=True)[:2] # get x, y domain
 
-        self.render_grid(domain, kinematic)
-        self.render_trajectory(domain, trajectory, kinematic)
-        self.render_info(kinematic, input_force)
-        self.render_boat(domain, geometry.shape)
-        self.render_force(domain, input_force, geometry)
+        self.render_grid(domain, system.kinematic)
+
+        if trajectory is not None:
+            self.render_trajectory(domain, trajectory, system.kinematic)
+
+        self.render_info(system.kinematic, input_force)
+        self.render_boat(domain, system.geometry.shape)
+        self.render_force(domain, input_force, system.geometry)
         
         pygame.display.flip()

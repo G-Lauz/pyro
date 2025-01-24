@@ -2,8 +2,9 @@ import abc
 
 import numpy
 
-from pyro.refactor.parameters import MechanicalSystemParameters
+from pyro.refactor.geometry import Geometry
 from pyro.refactor.kinematic import Kinematic
+from pyro.refactor.parameters import MechanicalSystemParameters
 
 
 class ContinuousDynamicSystem(abc.ABC):
@@ -32,11 +33,12 @@ class ContinuousDynamicSystem(abc.ABC):
 
 class MechanicalSystem(ContinuousDynamicSystem):
 
-    def __init__(self, parameters: MechanicalSystemParameters, kinematic: Kinematic):
+    def __init__(self, parameters: MechanicalSystemParameters, kinematic: Kinematic, geometry: Geometry):
         super().__init__(kinematic=kinematic)
 
         self.parameters = parameters
         self.kinematic = kinematic
+        self.geometry = geometry
 
     def accelerations(self, input):
         """

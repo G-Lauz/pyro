@@ -1,18 +1,5 @@
-import abc
-
-import numpy
-
+from .simulation import Simulation
 from pyro.refactor.system import ContinuousDynamicSystem
-
-
-class Simulation(abc.ABC):
-    @abc.abstractmethod
-    def step(self, input_force, dt=0.01):
-        pass
-
-    @abc.abstractmethod
-    def run(self, controller, dt=0.01, steps=1000):
-        pass
 
 
 class ContinuousSimulation(Simulation):
