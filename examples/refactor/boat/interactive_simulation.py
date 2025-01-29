@@ -1,4 +1,5 @@
 import clipy
+import numpy
 
 from pyro.refactor.simulation import PygameInteractiveSimulation
 from pyro.refactor.system import MechanicalSystem
@@ -11,6 +12,19 @@ from pyro.refactor.boat import (
     FixedCameraBoatRenderer,
     DynamicCameraBoatRenderer
 )
+
+
+def trajectory_generator():
+    domain = numpy.linspace(0, 30, 100)
+    codomain = 10 * numpy.sin(1/16 * numpy.pi * domain) + 5 * numpy.sin(1/8 * numpy.pi * domain)
+    trajectory = numpy.array([domain, codomain]).T
+
+    initial_point = trajectory[0]
+    trajectory = trajectory - initial_point
+
+    trajectory = trajectory + numpy.array([-4, 0]) # Initial position
+
+    return trajectory
 
 
 @clipy.command(usage="python boat_sim.py --config <path>", description="Boat2D simulation")
@@ -33,7 +47,7 @@ def main(config: str):
     renderer = DynamicCameraBoatRenderer()
 
     simulation = PygameInteractiveSimulation(system=system, renderer=renderer)
-    simulation.run(render=True)
+    simulation.run(render=True, trajectory_generator=trajectory_generator)
 
 if __name__ == "__main__":
     main()

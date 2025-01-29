@@ -20,11 +20,13 @@ class PygameInteractiveSimulation(ContinuousSimulation):
         self.input_upper_bound = system.parameters.inputs_upper_bound
         self.input_lower_bound = system.parameters.inputs_lower_bound
 
-    def run(self, controller=None, dt=0.1, steps=1000, render=False, callback=None):
+    def run(self, controller=None, dt=0.1, steps=1000, render=False, callback=None, trajectory_generator=None):
         self.is_running = True
 
         self.clock = pygame.time.Clock()
         dt = self.clock.tick(60) / 1000
+
+        trajectory = trajectory_generator() if trajectory_generator is not None else None
 
         while self.is_running:
             self._event_handler()
@@ -35,7 +37,7 @@ class PygameInteractiveSimulation(ContinuousSimulation):
                 callback(next_states)
 
             if render:
-                self.renderer.render(self._system, input_force, trajectory=None)
+                self.renderer.render(self._system, input_force, trajectory=trajectory)
 
             dt = self.clock.tick(60) / 1000
 

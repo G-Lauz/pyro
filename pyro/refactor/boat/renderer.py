@@ -222,7 +222,7 @@ class DynamicCameraBoatRenderer(BoatRenderer):
         points, vertical_len, horizontal_len = self._get_grid_points(start, end, scale)
 
         # Rotate and center the grid to match the boat heading
-        angle = -kinematic.positions[2] + numpy.pi / 2
+        angle = -kinematic.positions[2] - self.heading_offset
         x_offset = offset[0] - numpy.cos(angle) * offset[0] + numpy.sin(angle) * offset[1]
         y_offset = offset[1] - numpy.sin(angle) * offset[0] - numpy.cos(angle) * offset[1]
         offset = numpy.array([x_offset, y_offset])
@@ -244,7 +244,7 @@ class DynamicCameraBoatRenderer(BoatRenderer):
         trajectory_points = trajectory * scale + offset + position * scale
 
         # Rotate and center the grid to match the boat heading
-        angle = -kinematic.positions[2] + numpy.pi / 2
+        angle = -kinematic.positions[2] - self.heading_offset
         x_offset = offset[0] - numpy.cos(angle) * offset[0] + numpy.sin(angle) * offset[1]
         y_offset = offset[1] - numpy.sin(angle) * offset[0] - numpy.cos(angle) * offset[1]
         offset = numpy.array([x_offset, y_offset])
