@@ -1,19 +1,14 @@
 import abc
 
-import numpy
+from typing import Dict
+
+from pyro.refactor.signal import Signal
 
 
-class MechanicalSystemParameters(abc.ABC):
-    dof: int
-
-    inputs_upper_bound: numpy.ndarray
-    inputs_lower_bound: numpy.ndarray
-
-    def __init__(self):
-        super().__init__()
+class MechanicalDynamics(abc.ABC):
 
     @abc.abstractmethod
-    def inertia_matrix(self, *args, **kwargs):
+    def inertia_matrix(self, signals: Dict[str, Signal]):
         """
         Compute the inertia matrix of the system based on the current positions.
 
@@ -29,10 +24,9 @@ class MechanicalSystemParameters(abc.ABC):
 
         :return: The inertia matrix of the system.               (dof, dof)
         """
-        pass
 
     @abc.abstractmethod
-    def coriolis_matrix(self, *args, **kwargs):
+    def coriolis_matrix(self, signals: Dict[str, Signal]):
         """
         Compute the coriolis matrix of the system based on the current positions and velocities.
 
@@ -43,19 +37,17 @@ class MechanicalSystemParameters(abc.ABC):
 
         :return: The coriolis matrix of the system.              (dof, dof)
         """
-        pass
 
     @abc.abstractmethod
-    def gravitational_force(self, *args, **kwargs):
+    def gravitational_force(self, signals: Dict[str, Signal]):
         """
         Compute the gravitational force of the system.
 
         :return: The gravitational force of the system.   (dof, 1)
         """
-        pass
 
     @abc.abstractmethod
-    def dissipative_forces(self, *args, **kwargs):
+    def dissipative_forces(self, signals: Dict[str, Signal]):
         """
         Compute the dissipative forces of the system.
 
@@ -64,10 +56,9 @@ class MechanicalSystemParameters(abc.ABC):
 
         :return: The dissipative forces of the system.              (dof, 1)
         """
-        pass
 
     @abc.abstractmethod
-    def actuators_matrix(self, *args, **kwargs):
+    def actuators_matrix(self, signals: Dict[str, Signal]):
         """
         Compute the actuator matrix of the system based on the current positions.
 
@@ -75,4 +66,14 @@ class MechanicalSystemParameters(abc.ABC):
 
         :return: The actuator matrix of the system.              (dof, n_actuators)
         """
-        pass
+
+    @abc.abstractmethod
+    def transformation_matrix(self, signals: Dict[str, Signal]):
+        """
+        Compute the transformation matrix from generalized velocities to derivatives of
+        configuration variables.
+
+        :param configuration: The configuration of the system.
+
+        :return: The transformation matrix.   (n_configurations, dof)
+        """
