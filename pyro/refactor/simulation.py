@@ -2,7 +2,7 @@ import abc
 
 from typing import Union
 
-from pyro.refactor.system import System, DynamicSystem
+from pyro.refactor.system import System, DynamicSystem, StaticSystem
 from pyro.refactor.model import Model
 
 class Simulation(abc.ABC):
@@ -33,6 +33,8 @@ class ContinuousSimulation(Simulation):
         :param steps: The number of steps to run.                           (int)
         :param collect: Whether to collect history the simulation.          (bool)
         """
+        current_time = 0.0
+
         history = None
 
         if collect:
@@ -60,11 +62,26 @@ class ContinuousSimulation(Simulation):
             history = {name: [] for name in signals.keys()}
 
         for _ in range(steps):
-            sig = self._model.step(dt=dt)
-            self._model.update(sig)
+            for system in self._model.ordered_systems:
+                if collect and isinstance(system, DynamicSystem):
+                    for name, signal in system.outputs.items():
+                        history[name].append(signal.values.copy())
 
-            if collect:
-                for name, signal in signals.items():
-                    history[name].append(signal.values.copy())
+                if isinstance(system, DynamicSystem):
+                    if collect:
+                        history[system.states.name].append(system.states.values.copy())
+
+                    dynamics = system.compute_dynamics(time=current_time, dt=dt)
+                    new_states = system.states.values + dynamics * dt
+                    system.states.update(new_states)
+
+                output_signals = system.compute_output(time=current_time, dt=dt)
+                system.update(output_signals)
+
+                if collect and not isinstance(system, DynamicSystem):
+                    for name, signal in system.outputs.items():
+                        history[name].append(signal.values.copy())
+
+            current_time += dt
 
         return history
