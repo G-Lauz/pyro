@@ -36,6 +36,14 @@ class System(abc.ABC):
         :param dt: The time step of the simulation.                 (float)
         """
 
+    @abc.abstractmethod
+    def reset(self) -> None:
+        """
+        Reset the system to its initial state.
+
+        This method should reset all internal states and signals of the system.
+        """
+
     def update(self, signals: Dict[str, numpy.ndarray]) -> None:
         """
         Update the system with new signals.
@@ -95,6 +103,16 @@ class StaticSystem(System):
         output_signals = self.compute_output(time=time, dt=dt)
         self.update(output_signals)
 
+    def reset(self) -> None:
+        """
+        Reset the system to its initial state.
+
+        This method should reset all internal states and signals of the system.
+        """
+        for signal in self.outputs.values():
+            if signal is not None:
+                signal.reset()
+
 
 class DynamicSystem(StaticSystem):
     def __init__(self, name: str):
@@ -129,18 +147,6 @@ class DynamicSystem(StaticSystem):
         output_signals = self.compute_output(time=time, dt=dt)
         self.update(output_signals)
 
-    def update(self, signals: Dict[str, numpy.ndarray]) -> None:
-        """
-        Update the system with new signals.
-
-        :param signals: The signals to update the system with.      (dict)
-        """
-        for name, signal in signals.items():
-            if name in self.outputs:
-                self.outputs[name].update(signal)
-            else:
-                raise ValueError(f"Signal {name} not found in outputs of system {self.name}.")
-
     @abc.abstractmethod
     def compute_dynamics(self, time: float, dt: float = 0.01) -> numpy.ndarray:
         """
@@ -155,6 +161,16 @@ class DynamicSystem(StaticSystem):
 
         :return: The state derivative vector.                       (state_dim, 1)
         """
+
+    def reset(self) -> None:
+        """
+        Reset the system to its initial state.
+
+        This method should reset all internal states and signals of the system.
+        """
+        super().reset()
+        if self.states is not None:
+            self.states.reset()
 
 
 # class MechanicalSystem(DynamicSystem):

@@ -49,34 +49,6 @@ class ProportionalController(StaticSystem):
         }
 
 
-class ConstantSignal(StaticSystem):
-    """
-    Constant signal generator.
-    """
-
-    def __init__(self, name: str, value: float):
-        """
-        Initialize the constant signal generator.
-
-        :param value: The constant value of the signal. (float)
-        """
-        super().__init__(name=name)
-
-        self.add_output_port(name="y")
-
-        self.value = value
-
-    def compute_output(self, time: float, dt: float = 0.01) -> numpy.ndarray:
-        """
-        Compute the output of the constant signal generator.
-
-        :param time: The current time of the simulation. (float)
-        :param dt: The time step of the simulation. (float)
-        :return: The output of the constant signal generator. (numpy.ndarray)
-        """
-        return numpy.full(self.outputs["y"].dim, self.value)
-
-
 def plot_signals(history: dict):
     fig, axes = plt.subplots(len(history), 1, figsize=(6, 8))
     for i, (name, values) in enumerate(history.items()):
@@ -104,7 +76,7 @@ def main():
     ref = 5.0
 
     # Create an LTI system
-    lti_system = LTISystem(state_matrix=A, input_matrix=B, output_matrix=C, feedforward_matrix=D)
+    lti_system = LTISystem(state_matrix=A, input_matrix=B, output_matrix=C, feedforward_matrix=D, initial_states=numpy.array([1.0]))
     controller = ProportionalController(gain=K, references=ref)
 
     model = Model(name="LTI System with Controller")
@@ -123,12 +95,6 @@ def main():
                                                                upper_bounds=numpy.inf))
 
     model.initialize()
-
-    # Set the initial states
-    lti_system.states.update(numpy.array([0.0]))
-
-    # Simulate the lti system only
-    lti_system.states.update(numpy.array([1.0]))
 
     simulation = ContinuousSimulation(model=lti_system)
     history = simulation.run(dt=0.005, steps=1000, collect=True)
@@ -157,11 +123,8 @@ def main():
     plt.legend()
     plt.grid(True)
 
-    # Simulate the system
-    # Reset the simulation
-    lti_system.states.update(numpy.array([1.0]))
-    lti_system.inputs["u"].update(numpy.array([0.0]))
-    lti_system.outputs["y"].update(numpy.array([1.0]))
+    # Reset the simulation and simulate the system
+    model.reset()
 
     simulation = ContinuousSimulation(model=model)
     history = simulation.run(dt=0.005, steps=1000, collect=True)

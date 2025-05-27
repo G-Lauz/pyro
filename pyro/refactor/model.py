@@ -135,3 +135,10 @@ class Model(abc.ABC):
                 self.systems[sys_name].update(sys_signals)
             else:
                 raise ValueError(f"System {sys_name} not found in model {self.name}.")
+
+    def reset(self) -> None:
+        """
+        Reset the model to its initial state.
+        """
+        for system in self.systems.values():
+            system.reset()

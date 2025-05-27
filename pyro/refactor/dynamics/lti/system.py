@@ -15,7 +15,8 @@ class LTISystem(DynamicSystem):
                  state_matrix: Union[numpy.ndarray, float],
                  input_matrix: Union[numpy.ndarray, float],
                  output_matrix: Union[numpy.ndarray, float],
-                 feedforward_matrix: Union[numpy.ndarray, float]
+                 feedforward_matrix: Union[numpy.ndarray, float],
+                 initial_states: Union[numpy.ndarray, float] = None
                  ):
         """
         Initialize the LTI system with state-space matrices.
@@ -37,7 +38,7 @@ class LTISystem(DynamicSystem):
         # so the user can set them up as he wants
         self._states = Signal(name="x",
                              dim=state_matrix.shape[0],
-                             initial_values=numpy.zeros(state_matrix.shape[0]),
+                             initial_values=initial_states if initial_states is not None else numpy.zeros(state_matrix.shape[0]),
                              lower_bounds=numpy.full(state_matrix.shape[0], -numpy.inf),
                              upper_bounds=numpy.full(state_matrix.shape[0], numpy.inf))
 

@@ -2,7 +2,7 @@ import abc
 
 from typing import Union
 
-from pyro.refactor.system import System, DynamicSystem, StaticSystem
+from pyro.refactor.system import System, DynamicSystem
 from pyro.refactor.model import Model
 
 class Simulation(abc.ABC):

@@ -56,3 +56,9 @@ class Signal:
             values = numpy.array(values)
 
         self.values = values.copy()
+
+    def reset(self):
+        """
+        Reset the signal to its initial values.
+        """
+        self.values = self.initial_values.copy() if isinstance(self.initial_values, numpy.ndarray) else numpy.array(self.initial_values)
