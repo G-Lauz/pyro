@@ -115,12 +115,14 @@ class Model(abc.ABC):
         return sorted_systems
 
     def step(self, time: float = 1.0, dt: float = 0.01):
-        signals_per_system = {}
         for system in self.ordered_systems:
-            signals = system.step(time, dt)
+            if isinstance(system, DynamicSystem):
+                dynamics = system.compute_dynamics(time=time, dt=dt)
+                new_states = system.states.values + dynamics * dt
+                system.states.update(new_states)
 
-            signals_per_system[system.name] = signals
-        return signals_per_system
+            output_signals = system.compute_output(time=time, dt=dt)
+            system.update(output_signals)
 
     def update(self, signals: Dict[str, Dict[str, numpy.ndarray]]):
         """

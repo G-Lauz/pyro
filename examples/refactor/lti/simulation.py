@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy
 
+from scipy.integrate import odeint
+
 from pyro.refactor.signal import Signal
 from pyro.refactor.system import StaticSystem
 from pyro.refactor.dynamics import LTISystem
@@ -83,7 +85,6 @@ def plot_signals(history: dict):
         axes[i].set_xlabel("Time")
         axes[i].set_ylabel(name)
     plt.tight_layout()
-    plt.show()
 
 
 def main():
@@ -112,15 +113,15 @@ def main():
 
     model.connect(controller, "u", (lti_system, "u"), Signal(name="u",
                                                            dim=1,
-                                                           initial_values=numpy.zeros(1),
-                                                           lower_bounds=numpy.full(1, -numpy.inf),
-                                                           upper_bounds=numpy.full(1, numpy.inf)))
+                                                           initial_values=0.0,
+                                                           lower_bounds=-numpy.inf,
+                                                           upper_bounds=numpy.inf))
     model.connect(lti_system, "y", (controller, "obs"), Signal(name="y",
                                                                dim=1,
-                                                               initial_values=numpy.zeros(1),
-                                                               lower_bounds=numpy.full(1, -numpy.inf),
-                                                               upper_bounds=numpy.full(1, numpy.inf)))
-    
+                                                               initial_values=[1.0],
+                                                               lower_bounds=-numpy.inf,
+                                                               upper_bounds=numpy.inf))
+
     model.initialize()
 
     # Set the initial states
@@ -130,9 +131,31 @@ def main():
     lti_system.states.update(numpy.array([1.0]))
 
     simulation = ContinuousSimulation(model=lti_system)
-    history = simulation.run(dt=0.05, steps=100, collect=True)
+    history = simulation.run(dt=0.005, steps=1000, collect=True)
 
     plot_signals(history)
+
+    dt = 0.05
+    time = numpy.arange(0, 5, dt)
+    h_time = numpy.arange(0, 5, 0.005)
+
+    def system_only(state, t):
+        x = state
+        dxdt = A * x
+        return dxdt
+
+    x_sol = odeint(system_only, 1.0, time)
+
+    compare_to = history["x"]
+
+    plt.figure(figsize=(8,5))
+    plt.plot(time, x_sol[:, 0], label='x(t) from odeint')
+    plt.plot(h_time, compare_to, label='x(t) from simulation', alpha=0.75)
+    plt.xlabel('Time t')
+    plt.ylabel('State x(t)')
+    plt.title('Solver vs Simulation (System only)')
+    plt.legend()
+    plt.grid(True)
 
     # Simulate the system
     # Reset the simulation
@@ -141,9 +164,40 @@ def main():
     lti_system.outputs["y"].update(numpy.array([1.0]))
 
     simulation = ContinuousSimulation(model=model)
-    history = simulation.run(dt=0.05, steps=100, collect=True)
+    history = simulation.run(dt=0.005, steps=1000, collect=True)
 
     plot_signals(history)
+
+    def closed_loop(state, t):
+        x = state
+        u = -K * (x - ref)
+        dxdt = A * x + B * u
+        return dxdt
+
+    x_sol = odeint(closed_loop, 1.0, time)
+    u = -K * (x_sol[:, 0] - ref)
+
+    compare_to = history["x"]
+
+    plt.figure(figsize=(8,5))
+    plt.plot(time, x_sol[:, 0], label='x(t) from odeint')
+    plt.plot(h_time, compare_to, label='x(t) from simulation', alpha=0.75)
+    plt.xlabel('Time t')
+    plt.ylabel('State x(t)')
+    plt.title('Solver vs Simulation (Controller + System)')
+    plt.legend()
+    plt.grid(True)
+
+    plt.figure(figsize=(8,5))
+    plt.plot(time, u, label='u(t) from odeint')
+    plt.plot(h_time, history["u"], label='u(t) from simulation', alpha=0.75)
+    plt.xlabel('Time t')
+    plt.ylabel('Control u(t)')
+    plt.title('Solver vs Simulation (Controller + System)')
+    plt.legend()
+    plt.grid(True)
+
+    plt.show()
 
 if __name__ == "__main__":
     main()  # pylint: disable=no-value-for-parameter

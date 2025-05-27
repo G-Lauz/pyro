@@ -62,24 +62,36 @@ class ContinuousSimulation(Simulation):
             history = {name: [] for name in signals.keys()}
 
         for _ in range(steps):
-            for system in self._model.ordered_systems:
-                if collect and isinstance(system, DynamicSystem):
-                    for name, signal in system.outputs.items():
+            if isinstance(self._model, Model):
+                # Collect signals from dynamic systems
+                if collect:
+                    for system in self._model.systems.values():
+                        if isinstance(system, DynamicSystem):
+                            for name, signal in system.outputs.items():
+                                history[name].append(signal.values.copy())
+                            history[system.states.name].append(system.states.values.copy())
+
+                self._model.step(time=current_time, dt=dt)
+
+                # Collect signals from static systems
+                if collect:
+                    for system in self._model.systems.values():
+                        if not isinstance(system, DynamicSystem):
+                            for name, signal in system.outputs.items():
+                                history[name].append(signal.values.copy())
+
+            elif isinstance(self._model, System):
+                # Collect signals from dynamic systems
+                if collect and isinstance(self._model, DynamicSystem):
+                    for name, signal in self._model.outputs.items():
                         history[name].append(signal.values.copy())
+                    history[self._model.states.name].append(self._model.states.values.copy())
 
-                if isinstance(system, DynamicSystem):
-                    if collect:
-                        history[system.states.name].append(system.states.values.copy())
+                self._model.step(time=current_time, dt=dt)
 
-                    dynamics = system.compute_dynamics(time=current_time, dt=dt)
-                    new_states = system.states.values + dynamics * dt
-                    system.states.update(new_states)
-
-                output_signals = system.compute_output(time=current_time, dt=dt)
-                system.update(output_signals)
-
-                if collect and not isinstance(system, DynamicSystem):
-                    for name, signal in system.outputs.items():
+                # Collect signals from static systems
+                if collect and not isinstance(self._model, DynamicSystem):
+                    for name, signal in self._model.outputs.items():
                         history[name].append(signal.values.copy())
 
             current_time += dt

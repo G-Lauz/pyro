@@ -92,8 +92,8 @@ class StaticSystem(System):
         :param dt: The time step of the simulation.                 (float)
         """
         # No dynamics to compute for a static block since there are no states
-        outputs = self.compute_output(time=time, dt=dt)
-        return outputs
+        output_signals = self.compute_output(time=time, dt=dt)
+        self.update(output_signals)
 
 
 class DynamicSystem(StaticSystem):
@@ -124,12 +124,11 @@ class DynamicSystem(StaticSystem):
         """
         dynamics = self.compute_dynamics(time=time, dt=dt)
         new_states = self.states.values + dynamics * dt
-        self.states.update(new_states) # update internal signal
+        self.states.update(new_states)
 
-        observations = self.compute_output(time=time, dt=dt)
+        output_signals = self.compute_output(time=time, dt=dt)
+        self.update(output_signals)
 
-        return observations
-    
     def update(self, signals: Dict[str, numpy.ndarray]) -> None:
         """
         Update the system with new signals.
