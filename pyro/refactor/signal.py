@@ -1,9 +1,11 @@
+import abc
+
 from typing import List, Union
 
 import numpy
 
 
-class Signal:
+class Signal(abc.ABC):
     name: str
     dim: int
 
@@ -62,3 +64,34 @@ class Signal:
         Reset the signal to its initial values.
         """
         self.values = self.initial_values.copy() if isinstance(self.initial_values, numpy.ndarray) else numpy.array(self.initial_values)
+
+
+class StateSignal(Signal):
+    def __init__(self, 
+                 name: str,
+                 dim: int,
+                 initial_values: Union[numpy.ndarray, List[float], float],
+                 lower_bounds: Union[numpy.ndarray, List[float], float],
+                 upper_bounds: Union[numpy.ndarray, List[float], float]
+                 ):
+        super().__init__(name, dim, initial_values, lower_bounds, upper_bounds)
+
+    @property
+    def states(self) -> numpy.ndarray:
+        """
+        Get the current state values of the signal.
+
+        :return: The current state values.          (dim, 1)
+        """
+        return self.values
+
+    @states.setter
+    def states(self, values: numpy.ndarray):
+        """
+        Set the current state values of the signal.
+
+        :param values: The new state values.          (dim, 1)
+        """
+        if values.shape[0] != self.dim:
+            raise ValueError(f"Dimension mismatch: expected {self.dim}, got {values.shape[0]}")
+        self.update(values.flatten())

@@ -118,8 +118,7 @@ class Model(abc.ABC):
         for system in self.ordered_systems:
             if isinstance(system, DynamicSystem):
                 dynamics = system.compute_dynamics(time=time, dt=dt)
-                new_states = system.states.values + dynamics * dt
-                system.states.update(new_states)
+                system.states = system.states + dynamics * dt
 
             output_signals = system.compute_output(time=time, dt=dt)
             system.update(output_signals)

@@ -1,19 +1,8 @@
-import abc
-
 from typing import Union
 
 from pyro.refactor.system import System, DynamicSystem
 from pyro.refactor.model import Model
-
-class Simulation(abc.ABC):
-    @abc.abstractmethod
-    def run(self, dt: float = 0.01, steps: int = 1000):
-        """
-        Run the simulation for a given time and time step.
-
-        :param time: The current time of the simulation.            (float)
-        :param dt: The time step of the simulation.                 (float)
-        """
+from .simulation import Simulation
 
 
 class ContinuousSimulation(Simulation):
@@ -47,7 +36,7 @@ class ContinuousSimulation(Simulation):
 
                 # Collect all internal states
                 if isinstance(self._model, DynamicSystem):
-                    signals[self._model.states.name] = self._model.states
+                    signals[self._model.state_signal.name] = self._model.states
 
             elif isinstance(self._model, Model):
                 for system in self._model.systems.values():
@@ -57,7 +46,7 @@ class ContinuousSimulation(Simulation):
 
                     # Collect all internal states
                     if isinstance(system, DynamicSystem):
-                        signals[system.states.name] = system.states
+                        signals[system.state_signal.name] = system.states
 
             history = {name: [] for name in signals.keys()}
 
@@ -69,7 +58,7 @@ class ContinuousSimulation(Simulation):
                         if isinstance(system, DynamicSystem):
                             for name, signal in system.outputs.items():
                                 history[name].append(signal.values.copy())
-                            history[system.states.name].append(system.states.values.copy())
+                            history[system.state_signal.name].append(system.states.copy())
 
                 self._model.step(time=current_time, dt=dt)
 
@@ -85,7 +74,7 @@ class ContinuousSimulation(Simulation):
                 if collect and isinstance(self._model, DynamicSystem):
                     for name, signal in self._model.outputs.items():
                         history[name].append(signal.values.copy())
-                    history[self._model.states.name].append(self._model.states.values.copy())
+                    history[self._model.state_signal.name].append(self._model.states.copy())
 
                 self._model.step(time=current_time, dt=dt)
 

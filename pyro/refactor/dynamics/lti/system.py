@@ -2,7 +2,7 @@ from typing import Dict, Union
 
 import numpy
 
-from pyro.refactor.signal import Signal
+from pyro.refactor.signal import StateSignal
 from pyro.refactor.system import DynamicSystem
 
 
@@ -32,15 +32,16 @@ class LTISystem(DynamicSystem):
         output_matrix = self.ensure_array(output_matrix)
         feedforward_matrix = self.ensure_array(feedforward_matrix)
 
-        super().__init__(name="LTI System")
-
-        # TODO: We could expose those signal as parameters of the constructor
-        # so the user can set them up as he wants
-        self._states = Signal(name="x",
+        state_signal = StateSignal(name="x",
                              dim=state_matrix.shape[0],
                              initial_values=initial_states if initial_states is not None else numpy.zeros(state_matrix.shape[0]),
                              lower_bounds=numpy.full(state_matrix.shape[0], -numpy.inf),
                              upper_bounds=numpy.full(state_matrix.shape[0], numpy.inf))
+
+        super().__init__(name="LTI System", state_signal=state_signal)
+
+        # TODO: We could expose those signal as parameters of the constructor
+        # so the user can set them up as he wants
 
         self.add_input_port(name="u")
         self.add_output_port(name="y")
@@ -49,15 +50,6 @@ class LTISystem(DynamicSystem):
         self.input_matrix = input_matrix
         self.output_matrix = output_matrix
         self.feedforward_matrix = feedforward_matrix
-
-    # TODO: find a better way to interface states
-    @property
-    def states(self) -> Signal:
-        return self._states
-
-    @states.setter
-    def states(self, values: numpy.ndarray):
-        self._states.update(values)
 
     def compute_dynamics(self, time: float, dt: float = 0.01) -> numpy.ndarray:
         """
@@ -73,7 +65,7 @@ class LTISystem(DynamicSystem):
 
         :return: The state derivative vector.                       (state_dim, 1)
         """
-        states = self.states.values
+        states = self.states
         inputs = self.inputs["u"].values
 
         dynamics = numpy.dot(self.state_matrix, states) + numpy.dot(self.input_matrix, inputs)
@@ -93,7 +85,7 @@ class LTISystem(DynamicSystem):
 
         :return: The output vector.                                 (output_dim, 1)
         """
-        states = self.states.values
+        states = self.states
         inputs = self.inputs["u"].values
 
         output = numpy.dot(self.output_matrix, states) + numpy.dot(self.feedforward_matrix, inputs)

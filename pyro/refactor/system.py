@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 import numpy
 
-from pyro.refactor.signal import Signal
+from pyro.refactor.signal import Signal, StateSignal
 
 
 class System(abc.ABC):
@@ -115,23 +115,27 @@ class StaticSystem(System):
 
 
 class DynamicSystem(StaticSystem):
-    def __init__(self, name: str):
+    states: StateSignal
+
+    def __init__(self, name: str, state_signal: StateSignal):
         super().__init__(name=name)
 
+        self.state_signal = state_signal
+
     @property
-    @abc.abstractmethod
-    def states(self) -> Signal:
+    def states(self) -> numpy.ndarray:
         """
         The state signal of the system.                            (Signal)
         """
+        return self.state_signal.states
 
     @states.setter
-    @abc.abstractmethod
     def states(self, values: numpy.ndarray):
         """
         Set the state signal of the system.
         :param values: The state signal of the system.              (numpy.ndarray)
         """
+        self.state_signal.states = values
 
     def step(self, time: float = 1.0, dt: float = 0.01) -> Dict[str, numpy.ndarray]:
         """
@@ -141,8 +145,7 @@ class DynamicSystem(StaticSystem):
         :param dt: The time step of the simulation.                 (float)
         """
         dynamics = self.compute_dynamics(time=time, dt=dt)
-        new_states = self.states.values + dynamics * dt
-        self.states.update(new_states)
+        self.states = self.states + dynamics * dt
 
         output_signals = self.compute_output(time=time, dt=dt)
         self.update(output_signals)
@@ -170,58 +173,4 @@ class DynamicSystem(StaticSystem):
         """
         super().reset()
         if self.states is not None:
-            self.states.reset()
-
-
-# class MechanicalSystem(DynamicSystem):
-#     def __init__(self, name: str, kinematics: Kinematics, dynamics: Dynamics):
-#         super().__init__(name=name)
-
-#         self.kinematics = None
-#         self.dynamics = None
-
-#         states_dim = kinematics.states_dim
-
-#         # TODO: We could expose those signal as parameters of the constructor
-#         # so the user can set them up as he wants
-#         self._states = Signal(name="q",
-#                                 dim=states_dim,
-#                                 initial_values=numpy.zeros(states_dim),
-#                                 lower_bounds=numpy.full(states_dim, -numpy.inf),
-#                                 upper_bounds=numpy.full(states_dim, numpy.inf))
-
-#     # TODO: find a better way to interface states
-#     @property
-#     def states(self) -> Signal:
-#         return self._states
-    
-#     @states.setter
-#     def states(self, values: numpy.ndarray):
-#         self._states.update(values)
-
-#     def acceleration(self):
-#         H = inertia_matrix()
-#         C = coriolis_matrix()
-#         g = gravitational_force()
-#         d = dissipative_forces()
-#         B = actuators_matrix()
-
-#         velocities = self.states.values[3:]
-#         inputs = self.inputs["u"].values
-
-#         accelerations = numpy.linalg.inv(H) @ (B @ inputs - C @ velocities - g - d)
-
-#         return accelerations
-
-#     def compute_dynamics(self, time: float = 1.0, dt: float = 0.01) -> numpy.ndarray:
-#         positions = self.states.values[:3]
-#         velocities = transformation_matrix(self.states.values[3:]) # apply transformation matrix from kinematics
-#         accelerations = self.acceleration()
-
-#         states_derivative = numpy.concatenate((velocities, accelerations), axis=0)
-#         return states_derivative
-
-#     def compute_output(self, time: float, dt: float = 0.01) -> Dict[str, numpy.ndarray]:
-#         return {
-#             "y": self.states.values
-#         }
+            self.state_signal.reset()

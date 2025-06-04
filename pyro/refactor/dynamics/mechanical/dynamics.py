@@ -3,12 +3,13 @@ import abc
 from typing import Dict
 
 from pyro.refactor.signal import Signal
+from .signal import MechanicalStateSignal
 
 
 class MechanicalDynamics(abc.ABC):
 
     @abc.abstractmethod
-    def inertia_matrix(self, signals: Dict[str, Signal]):
+    def inertia_matrix(self, states: MechanicalStateSignal):
         """
         Compute the inertia matrix of the system based on the current positions.
 
@@ -26,7 +27,7 @@ class MechanicalDynamics(abc.ABC):
         """
 
     @abc.abstractmethod
-    def coriolis_matrix(self, signals: Dict[str, Signal]):
+    def coriolis_matrix(self, states: MechanicalStateSignal):
         """
         Compute the coriolis matrix of the system based on the current positions and velocities.
 
@@ -39,7 +40,7 @@ class MechanicalDynamics(abc.ABC):
         """
 
     @abc.abstractmethod
-    def gravitational_force(self, signals: Dict[str, Signal]):
+    def gravitational_force(self, states: MechanicalStateSignal):
         """
         Compute the gravitational force of the system.
 
@@ -47,7 +48,7 @@ class MechanicalDynamics(abc.ABC):
         """
 
     @abc.abstractmethod
-    def dissipative_forces(self, signals: Dict[str, Signal]):
+    def dissipative_forces(self, states: MechanicalStateSignal):
         """
         Compute the dissipative forces of the system.
 
@@ -58,22 +59,11 @@ class MechanicalDynamics(abc.ABC):
         """
 
     @abc.abstractmethod
-    def actuators_matrix(self, signals: Dict[str, Signal]):
+    def actuators_matrix(self, states: MechanicalStateSignal, inputs: Signal):
         """
         Compute the actuator matrix of the system based on the current positions.
 
         :param positions: The current positions of the system.   (dof, 1)
 
         :return: The actuator matrix of the system.              (dof, n_actuators)
-        """
-
-    @abc.abstractmethod
-    def transformation_matrix(self, signals: Dict[str, Signal]):
-        """
-        Compute the transformation matrix from generalized velocities to derivatives of
-        configuration variables.
-
-        :param configuration: The configuration of the system.
-
-        :return: The transformation matrix.   (n_configurations, dof)
         """
