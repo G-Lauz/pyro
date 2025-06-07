@@ -20,7 +20,8 @@ class Signal(abc.ABC):
                  dim: int,
                  initial_values: Union[numpy.ndarray, List[float], float],
                  lower_bounds: Union[numpy.ndarray, List[float], float],
-                 upper_bounds: Union[numpy.ndarray, List[float], float]
+                 upper_bounds: Union[numpy.ndarray, List[float], float],
+                 saturation: bool = False
                  ):
         self.name = name
         self.dim = dim
@@ -30,6 +31,8 @@ class Signal(abc.ABC):
 
         self.lower_bounds = lower_bounds if isinstance(lower_bounds, numpy.ndarray) else numpy.array(lower_bounds)
         self.upper_bounds = upper_bounds if isinstance(upper_bounds, numpy.ndarray) else numpy.array(upper_bounds)
+
+        self.saturation = saturation
 
     def __repr__(self):
         return f"Signal(name={self.name}, dim={self.dim}, initial_values={self.initial_values}, values={self.values}"
@@ -56,6 +59,9 @@ class Signal(abc.ABC):
 
         if isinstance(values, list):
             values = numpy.array(values)
+
+        if self.saturation:
+            values = numpy.clip(values, self.lower_bounds, self.upper_bounds)
 
         self.values = values.copy()
 

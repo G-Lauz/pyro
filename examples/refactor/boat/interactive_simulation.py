@@ -1,7 +1,7 @@
 import clipy
 import numpy
 
-from pyro.refactor.simulation import PygameSimulation, PygameInteractiveSimulation
+from pyro.refactor.simulation import PygameInteractiveSimulation
 from pyro.refactor.dynamics.mechanical.system import MechanicalSystem
 from pyro.refactor.signal import Signal
 from pyro.refactor.dynamics.mechanical.signal import MechanicalStateSignal
@@ -11,7 +11,7 @@ from pyro.refactor.dynamics.mechanical.boat import (
     BoatDynamics,
     BoatKinematics,
     BoatGeometry,
-    DynamicCameraBoatRenderer
+    BoatRenderer
 )
 
 from pyro.refactor.dynamics.mechanical.configuration import MechanicalConfiguration
@@ -53,7 +53,7 @@ def main():
     """
     Example of usage from root directory:
     ```bash
-    python .\examples\refactor\boat\simulation.py
+    python .\examples\refactor\boat\interactive_simulation.py
     ```
     """
     geometry = BoatGeometry(CONFIGURATION.geometry)
@@ -82,7 +82,7 @@ def main():
                                                 lower_bounds=[-10.0, -10.0, -numpy.pi, -10.0, -10.0, -numpy.pi],
                                                 upper_bounds=[10.0, 10.0, numpy.pi, 10.0, 10.0, numpy.pi])
 
-    renderer = DynamicCameraBoatRenderer(geometry=geometry)
+    renderer = BoatRenderer(geometry=geometry)
 
     # simulation = PygameSimulation(model=system, renderer=renderer)
     simulation = PygameInteractiveSimulation(system=system, renderer=renderer)

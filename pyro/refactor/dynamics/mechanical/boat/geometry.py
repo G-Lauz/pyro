@@ -1,6 +1,6 @@
 import numpy
 
-from pyro.refactor.dynamics.mechanical.geometry import Geometry
+from pyro.refactor.geometry import Geometry
 from .configuration import BoatGeometryConfiguration
 
 
