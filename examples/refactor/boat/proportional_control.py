@@ -2,11 +2,13 @@ import clipy
 import matplotlib.pyplot as plt
 import numpy
 
+from scipy.integrate import solve_ivp
+
 from pyro.refactor.simulation import PygameSimulation
 from pyro.refactor.dynamics.mechanical.system import MechanicalSystem
 from pyro.refactor.signal import Signal
 from pyro.refactor.dynamics.mechanical.signal import MechanicalStateSignal
-from pyro.refactor.system import StaticSystem
+from pyro.refactor.system import StaticSystem, DynamicSystem
 from pyro.refactor.model import Model
 
 from pyro.refactor.dynamics.mechanical.boat import (
@@ -105,13 +107,18 @@ class PIDController(StaticSystem):
         return {"u": numpy.array([Fx, Fy])}
     
 
-def plot_signals(history: dict):
-    fig, axes = plt.subplots(len(history), 1, figsize=(6, 8))
+def plot_signals(history: dict, title: str = "Boat 2D Signals"):
+    fig, axes = plt.subplots(len(history), 1, figsize=(6, 8), squeeze=False)
+    axes = axes.flatten()
+
+    fig.suptitle(title)
+
     for i, (name, values) in enumerate(history.items()):
         axes[i].plot(values)
         axes[i].set_title(f"Signal {name}")
         axes[i].set_xlabel("Time")
         axes[i].set_ylabel(name)
+
     plt.tight_layout()
 
 
@@ -157,12 +164,31 @@ def main():
 
     model.initialize()
 
+    # Solve using solve_ivp
+    solution = solve_ivp(
+        fun=lambda t, y: model.dynamics(t, y, dt=0.01),
+        t_span=(0, 100),
+        y0=model.get_initial_states(),
+        t_eval=numpy.arange(0, 100, 0.01),
+        method='RK45'
+    )
+
+    # Create a history dictionary to store signals
+    history = {}
+    for system in model.ordered_systems:
+        if isinstance(system, DynamicSystem):
+            history[system.state_signal.name] = solution.y[:len(system.state_signal.values), :].T
+
+    plot_signals(history, title="Signals from solve_ivp")
+
+    model.reset()
+
     renderer = BoatRenderer(geometry=geometry)
 
     simulation = PygameSimulation(model=model, renderer=renderer)
     history = simulation.run(render=True, collect=True)
 
-    plot_signals(history)
+    plot_signals(history, title="Signals from Pygame Simulation")
     plt.show()
 
 

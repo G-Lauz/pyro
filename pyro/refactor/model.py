@@ -123,6 +123,37 @@ class Model(abc.ABC):
             output_signals = system.compute_output(time=time, dt=dt)
             system.update(output_signals)
 
+    def dynamics(self, time, states, dt=0.01) -> numpy.ndarray:
+        # Distribute states to individual systems
+        state_index = 0
+        for system in self.ordered_systems:
+            if isinstance(system, DynamicSystem):
+                system_size = len(system.state_signal.values)
+                system.state_signal.values = states[state_index:state_index + system_size]
+                state_index += system_size
+
+        # Compute outputs and propagate signals
+        for system in self.ordered_systems:
+            outputs = system.compute_output(time=time, dt=dt)
+            system.update(outputs)
+
+        # Compute dynamics for all systems
+        all_dynamics = []
+        for system in self.ordered_systems:
+            if isinstance(system, DynamicSystem):
+                dynamics = system.compute_dynamics(time=time, dt=dt)
+                all_dynamics.append(dynamics)
+
+        # Concatenate all dynamics into a single array
+        return numpy.concatenate(all_dynamics)
+
+    def get_initial_states(self) -> numpy.ndarray:
+        initial_states = []
+        for system in self.ordered_systems:
+            if isinstance(system, DynamicSystem):
+                initial_states.append(system.state_signal.values)
+        return numpy.concatenate(initial_states)
+
     def update(self, signals: Dict[str, Dict[str, numpy.ndarray]]):
         """
         Update the model with new signals.
