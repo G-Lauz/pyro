@@ -2,7 +2,9 @@ from typing import Union
 
 from pyro.refactor.system import System, DynamicSystem
 from pyro.refactor.model import Model
+
 from .simulation import Simulation
+from .stop_condition import StopCondition
 
 
 class ContinuousSimulation(Simulation):
@@ -14,7 +16,7 @@ class ContinuousSimulation(Simulation):
         """
         self._model = model
 
-    def run(self, dt: float = 0.01, steps: int = 1000, collect: bool = False):
+    def run(self, dt: float = 0.01, steps: int = 1000, collect: bool = False, stop_condition: StopCondition = None):
         """
         Run the simulation for a given time and time step.
 
@@ -84,5 +86,8 @@ class ContinuousSimulation(Simulation):
                         history[name].append(signal.values.copy())
 
             current_time += dt
+
+            if stop_condition is not None and stop_condition.is_met(self._model):
+                break
 
         return history

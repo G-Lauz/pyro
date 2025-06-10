@@ -5,7 +5,9 @@ import numpy
 from pyro.refactor.system import System, DynamicSystem
 from pyro.refactor.model import Model
 from pyro.refactor.renderer import Renderer
+
 from .continuous import ContinuousSimulation
+from .stop_condition import StopCondition
 
 
 class PygameSimulation(ContinuousSimulation):
@@ -27,7 +29,7 @@ class PygameSimulation(ContinuousSimulation):
             if event.type == self.pygame.QUIT:
                 self.is_running = False
 
-    def run(self, dt=0.1, steps=1000, render=False, callback=None, collect=False):
+    def run(self, dt=0.1, steps=1000, render=False, callback=None, collect=False, stop_condition: StopCondition = None):
         self.is_running = True
 
         current_time = 0.0
@@ -108,6 +110,9 @@ class PygameSimulation(ContinuousSimulation):
             dt = self.clock.tick(60) / 1000
             current_time += dt
 
+            if stop_condition is not None and stop_condition.is_met(self._model):
+                self.is_running = False
+
         return history
 
 
@@ -127,7 +132,7 @@ class PygameInteractiveSimulation(ContinuousSimulation):
         self.pygame.joystick.init()
         self.joysticks = []
 
-    def run(self, dt=0.1, steps=1000, render=False, callback=None):
+    def run(self, dt=0.1, steps=1000, render=False, callback=None, stop_condition: StopCondition = None):
         self.is_running = True
 
         current_time = 0.0
@@ -152,6 +157,9 @@ class PygameInteractiveSimulation(ContinuousSimulation):
 
             dt = self.clock.tick(60) / 1000
             current_time += dt
+
+            if stop_condition is not None and stop_condition.is_met(self._model):
+                self.is_running = False
 
     def _event_handler(self):
         for event in self.pygame.event.get():
