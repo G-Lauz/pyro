@@ -2,10 +2,12 @@ import clipy
 import matplotlib.pyplot as plt
 import numpy
 
-from pyro.refactor.simulation import PygameInteractiveSimulation
+from pyro.refactor.simulation import PygameSimulation
 from pyro.refactor.dynamics.mechanical.system import MechanicalSystem
 from pyro.refactor.signal import Signal
 from pyro.refactor.dynamics.mechanical.signal import MechanicalStateSignal
+from pyro.refactor.controller import PygameJoystickController
+from pyro.refactor.model import Model
 
 from pyro.refactor.dynamics.mechanical.boat import (
     BoatConfiguration,
@@ -77,20 +79,6 @@ def main():
     dynamics = BoatDynamics(CONFIGURATION)
 
     system = MechanicalSystem(name="Boat 2D", kinematics=kinematics, dynamics=dynamics)
-    system.add_input_port(name="u")
-    system.add_output_port(name="y")
-
-    # TODO: Allow system only simulation without inputs and outputs signal deifnition
-    system.inputs["u"] = Signal(name="u",
-                                dim=2,
-                                initial_values=[0.0, 0.0],
-                                lower_bounds=[-10000.0, -1000.0],
-                                upper_bounds=[10000.0, 1000.0])
-    system.outputs["y"] = Signal(name="y",
-                                 dim=6,
-                                 initial_values=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                                 lower_bounds=[-10.0, -10.0, -numpy.pi, -10.0, -10.0, -numpy.pi],
-                                 upper_bounds=[10.0, 10.0, numpy.pi, 10.0, 10.0, numpy.pi])
     # TODO: Allow system only simulation without state signal definition
     system.state_signal = MechanicalStateSignal(name="x",
                                                 dim=6,
@@ -98,10 +86,30 @@ def main():
                                                 lower_bounds=[-10.0, -10.0, -numpy.pi, -10.0, -10.0, -numpy.pi],
                                                 upper_bounds=[10.0, 10.0, numpy.pi, 10.0, 10.0, numpy.pi])
 
+    # TODO: Allow system only simulation without inputs and outputs signal deifnition
+    system.add_output_port(name="y")
+    system.outputs["y"] = Signal(name="y",
+                                 dim=6,
+                                 initial_values=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                                 lower_bounds=[-10.0, -10.0, -numpy.pi, -10.0, -10.0, -numpy.pi],
+                                 upper_bounds=[10.0, 10.0, numpy.pi, 10.0, 10.0, numpy.pi])
+    
+    controller = PygameJoystickController()
+
+    model = Model(name="Boat 2D with joystick controller")
+    model.add_system(system)
+    model.add_system(controller)
+    model.connect(controller, "u", (system, "u"), Signal(name="u",
+                                                          dim=2,
+                                                          initial_values=[0.0, 0.0],
+                                                          lower_bounds=[-10000.0, -1000.0],
+                                                          upper_bounds=[10000.0, 1000.0],
+                                                          saturation=True))
+    model.initialize()
+
     renderer = BoatRenderer(geometry=geometry)
 
-    # simulation = PygameSimulation(model=system, renderer=renderer)
-    simulation = PygameInteractiveSimulation(system=system, renderer=renderer)
+    simulation = PygameSimulation(model=model, renderer=renderer)
     history = simulation.run(render=True, collect=True)
 
     plot_signals(history, title="Signals from Pygame Simulation")
