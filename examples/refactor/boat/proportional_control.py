@@ -129,7 +129,7 @@ def main():
     """
     Example of usage from root directory:
     ```bash
-    python .\examples\refactor\boat\proportional_control.py
+    python ./examples/refactor/boat/proportional_control.py
     ```
     """
     geometry = BoatGeometry(CONFIGURATION.geometry)

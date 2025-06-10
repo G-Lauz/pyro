@@ -1,4 +1,5 @@
 import clipy
+import matplotlib.pyplot as plt
 import numpy
 
 from pyro.refactor.simulation import PygameInteractiveSimulation
@@ -46,6 +47,21 @@ CONFIGURATION = BoatConfiguration(
 )
 
 
+def plot_signals(history: dict, title: str = "Boat 2D Signals"):
+    fig, axes = plt.subplots(len(history), 1, figsize=(6, 8), squeeze=False)
+    axes = axes.flatten()
+
+    fig.suptitle(title)
+
+    for i, (name, values) in enumerate(history.items()):
+        axes[i].plot(values)
+        axes[i].set_title(f"Signal {name}")
+        axes[i].set_xlabel("Time")
+        axes[i].set_ylabel(name)
+
+    plt.tight_layout()
+
+
 @clipy.command(usage="python position_control.py --config <path>", description="Boat2D simulation")
 # @clipy.argument("config", required=True, type=str, help="Path to the configuration file")
 # def main(config: str):
@@ -53,7 +69,7 @@ def main():
     """
     Example of usage from root directory:
     ```bash
-    python .\examples\refactor\boat\interactive_simulation.py
+    python ./examples/refactor/boat/interactive_simulation.py
     ```
     """
     geometry = BoatGeometry(CONFIGURATION.geometry)
@@ -86,7 +102,10 @@ def main():
 
     # simulation = PygameSimulation(model=system, renderer=renderer)
     simulation = PygameInteractiveSimulation(system=system, renderer=renderer)
-    simulation.run(render=True)
+    history = simulation.run(render=True, collect=True)
+
+    plot_signals(history, title="Signals from Pygame Simulation")
+    plt.show()
 
 
 if __name__ == "__main__":

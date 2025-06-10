@@ -3,6 +3,7 @@ from typing import Union
 from pyro.refactor.system import System, DynamicSystem
 from pyro.refactor.model import Model
 
+from .probe import Probe, NullProbe, ModelProbe, SystemProbe
 from .simulation import Simulation
 from .stop_condition import StopCondition
 
@@ -26,68 +27,33 @@ class ContinuousSimulation(Simulation):
         """
         current_time = 0.0
 
-        history = None
-
-        if collect:
-            signals = {}
-
-            if isinstance(self._model, System):
-                # Collect all signals
-                for signal in self._model.outputs.values():
-                    signals[signal.name] = signal
-
-                # Collect all internal states
-                if isinstance(self._model, DynamicSystem):
-                    signals[self._model.state_signal.name] = self._model.states
-
-            elif isinstance(self._model, Model):
-                for system in self._model.systems.values():
-                    # Collect all signals
-                    for signal in system.outputs.values():
-                        signals[signal.name] = signal
-
-                    # Collect all internal states
-                    if isinstance(system, DynamicSystem):
-                        signals[system.state_signal.name] = system.states
-
-            history = {name: [] for name in signals.keys()}
+        probe = self._create_probe(collect=collect)
+        probe.initialize_history(self._model)
 
         for _ in range(steps):
-            if isinstance(self._model, Model):
-                # Collect signals from dynamic systems
-                if collect:
-                    for system in self._model.systems.values():
-                        if isinstance(system, DynamicSystem):
-                            for name, signal in system.outputs.items():
-                                history[name].append(signal.values.copy())
-                            history[system.state_signal.name].append(system.states.copy())
-
-                self._model.step(time=current_time, dt=dt)
-
-                # Collect signals from static systems
-                if collect:
-                    for system in self._model.systems.values():
-                        if not isinstance(system, DynamicSystem):
-                            for name, signal in system.outputs.items():
-                                history[name].append(signal.values.copy())
-
-            elif isinstance(self._model, System):
-                # Collect signals from dynamic systems
-                if collect and isinstance(self._model, DynamicSystem):
-                    for name, signal in self._model.outputs.items():
-                        history[name].append(signal.values.copy())
-                    history[self._model.state_signal.name].append(self._model.states.copy())
-
-                self._model.step(time=current_time, dt=dt)
-
-                # Collect signals from static systems
-                if collect and not isinstance(self._model, DynamicSystem):
-                    for name, signal in self._model.outputs.items():
-                        history[name].append(signal.values.copy())
+            probe.collect_dynamics(self._model, time=current_time)
+            self._model.step(time=current_time, dt=dt)
+            probe.collect_statics(self._model, time=current_time)
 
             current_time += dt
 
             if stop_condition is not None and stop_condition.is_met(self._model):
                 break
 
-        return history
+        return probe.history if collect else None
+
+    def _create_probe(self, collect=False):
+        """
+        Create a probe for the simulation.
+
+        :param collect: Whether to collect history the simulation. (bool)
+        :return: A probe instance for the simulation.
+        """
+        if collect:
+            if isinstance(self._model, Model):
+                return ModelProbe()
+
+            elif isinstance(self._model, System):
+                return SystemProbe()
+
+        return NullProbe()

@@ -36,66 +36,15 @@ class PygameSimulation(ContinuousSimulation):
         self.clock = self.pygame.time.Clock()
         dt = self.clock.tick(60) / 1000
 
-        history = None
-
-        if collect:
-            signals = {}
-
-            if isinstance(self._model, System):
-                # Collect all signals
-                for signal in self._model.outputs.values():
-                    signals[signal.name] = signal
-
-                # Collect all internal states
-                if isinstance(self._model, DynamicSystem):
-                    signals[self._model.state_signal.name] = self._model.states
-
-            elif isinstance(self._model, Model):
-                for system in self._model.systems.values():
-                    # Collect all signals
-                    for signal in system.outputs.values():
-                        signals[signal.name] = signal
-
-                    # Collect all internal states
-                    if isinstance(system, DynamicSystem):
-                        signals[system.state_signal.name] = system.states
-
-            history = {name: [] for name in signals.keys()}
+        probe = self._create_probe(collect=collect)
+        probe.initialize_history(self._model)
 
         while self.is_running:
             self._event_handler()
 
-            if isinstance(self._model, Model):
-                # Collect signals from dynamic systems
-                if collect:
-                    for system in self._model.systems.values():
-                        if isinstance(system, DynamicSystem):
-                            for name, signal in system.outputs.items():
-                                history[name].append(signal.values.copy())
-                            history[system.state_signal.name].append(system.states.copy())
-
-                self._model.step(time=current_time, dt=dt)
-
-                # Collect signals from static systems
-                if collect:
-                    for system in self._model.systems.values():
-                        if not isinstance(system, DynamicSystem):
-                            for name, signal in system.outputs.items():
-                                history[name].append(signal.values.copy())
-
-            elif isinstance(self._model, System):
-                # Collect signals from dynamic systems
-                if collect and isinstance(self._model, DynamicSystem):
-                    for name, signal in self._model.outputs.items():
-                        history[name].append(signal.values.copy())
-                    history[self._model.state_signal.name].append(self._model.states.copy())
-
-                self._model.step(time=current_time, dt=dt)
-
-                # Collect signals from static systems
-                if collect and not isinstance(self._model, DynamicSystem):
-                    for name, signal in self._model.outputs.items():
-                        history[name].append(signal.values.copy())
+            probe.collect_dynamics(self._model, time=current_time)
+            self._model.step(time=current_time, dt=dt)
+            probe.collect_statics(self._model, time=current_time)
 
             if callback is not None:
                 raise NotImplementedError("Callback is not implemented in PygameSimulation")
@@ -113,7 +62,7 @@ class PygameSimulation(ContinuousSimulation):
             if stop_condition is not None and stop_condition.is_met(self._model):
                 self.is_running = False
 
-        return history
+        return probe.history if collect else None
 
 
 class PygameInteractiveSimulation(ContinuousSimulation):
@@ -132,19 +81,25 @@ class PygameInteractiveSimulation(ContinuousSimulation):
         self.pygame.joystick.init()
         self.joysticks = []
 
-    def run(self, dt=0.1, steps=1000, render=False, callback=None, stop_condition: StopCondition = None):
+    def run(self, dt=0.1, steps=1000, render=False, callback=None, collect=False, stop_condition: StopCondition = None):
         self.is_running = True
 
         current_time = 0.0
         self.clock = self.pygame.time.Clock()
         dt = self.clock.tick(60) / 1000
 
+        probe = self._create_probe(collect=collect)
+        probe.initialize_history(self._model)
+
         while self.is_running:
             self._event_handler()
             input_force = self._input_handler()
 
             self._model.inputs["u"].update(input_force)  # TODO: better interface for inputs
+
+            probe.collect_dynamics(self._model, time=current_time)
             self._model.step(time=current_time, dt=dt)
+            probe.collect_statics(self._model, time=current_time)
 
             if callback is not None:
                 raise NotImplementedError("Callback is not implemented in PygameInteractiveSimulation")
@@ -160,6 +115,8 @@ class PygameInteractiveSimulation(ContinuousSimulation):
 
             if stop_condition is not None and stop_condition.is_met(self._model):
                 self.is_running = False
+        
+        return probe.history if collect else None
 
     def _event_handler(self):
         for event in self.pygame.event.get():

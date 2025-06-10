@@ -63,7 +63,7 @@ def main():
     """
     Example of usage from root directory:
     ```bash
-    python .\examples\refactor\lti\proportional_control.py
+    python ./examples/refactor/lti/proportional_control.py
     ```
     """
     # Define the state-space matrices
