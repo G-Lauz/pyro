@@ -49,13 +49,18 @@ class ProportionalController(StaticSystem):
         }
 
 
-def plot_signals(history: dict):
-    fig, axes = plt.subplots(len(history), 1, figsize=(6, 8))
+def plot_signals(history: dict, title: str = "Boat 2D Signals"):
+    fig, axes = plt.subplots(len(history), 1, figsize=(6, 8), squeeze=False)
+    axes = axes.flatten()
+
+    fig.suptitle(title)
+
     for i, (name, values) in enumerate(history.items()):
-        axes[i].plot(values)
+        axes[i].plot(values[:,:,0], values[:,:,1])
         axes[i].set_title(f"Signal {name}")
         axes[i].set_xlabel("Time")
         axes[i].set_ylabel(name)
+
     plt.tight_layout()
 
 
@@ -103,7 +108,6 @@ def main():
 
     dt = 0.05
     time = numpy.arange(0, 5, dt)
-    h_time = numpy.arange(0, 5, 0.005)
 
     def system_only(state, t):
         x = state
@@ -116,7 +120,7 @@ def main():
 
     plt.figure(figsize=(8,5))
     plt.plot(time, x_sol[:, 0], label='x(t) from odeint')
-    plt.plot(h_time, compare_to, label='x(t) from simulation', alpha=0.75)
+    plt.plot(compare_to[:, 0, 0], compare_to[:, 0, 1], label='x(t) from simulation', alpha=0.75)
     plt.xlabel('Time t')
     plt.ylabel('State x(t)')
     plt.title('Solver vs Simulation (System only)')
@@ -144,7 +148,7 @@ def main():
 
     plt.figure(figsize=(8,5))
     plt.plot(time, x_sol[:, 0], label='x(t) from odeint')
-    plt.plot(h_time, compare_to, label='x(t) from simulation', alpha=0.75)
+    plt.plot(compare_to[:, 0, 0], compare_to[:, 0, 1], label='x(t) from simulation', alpha=0.75)
     plt.xlabel('Time t')
     plt.ylabel('State x(t)')
     plt.title('Solver vs Simulation (Controller + System)')
@@ -153,7 +157,7 @@ def main():
 
     plt.figure(figsize=(8,5))
     plt.plot(time, u, label='u(t) from odeint')
-    plt.plot(h_time, history["u"], label='u(t) from simulation', alpha=0.75)
+    plt.plot(history["u"][:, 0, 0], history["u"][:, 0, 1], label='u(t) from simulation', alpha=0.75)
     plt.xlabel('Time t')
     plt.ylabel('Control u(t)')
     plt.title('Solver vs Simulation (Controller + System)')

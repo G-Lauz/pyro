@@ -1,6 +1,8 @@
 import abc
 
-from typing import Union
+from typing import Dict, Union
+
+import numpy
 
 from pyro.refactor.model import Model
 from pyro.refactor.system import System, DynamicSystem
@@ -12,19 +14,29 @@ class Probe(abc.ABC):
     Probes are used to collect data during the simulation.
     """
 
+    _history: Dict[str, list]
+
     def __init__(self):
         """
         Initialize the probe.
         This method can be overridden by subclasses to initialize specific attributes.
         """
-        self.history = None
+        self._history = None
+
+    @property
+    def history(self) -> Dict[str, numpy.ndarray]:
+        # Cast to numpy arrays
+        for name, values in self._history.items():
+            if isinstance(values, list):
+                self._history[name] = numpy.array(values)
+        return self._history
 
     def reset(self):
         """
         Reset the probe's history.
         This method can be called to clear the collected data.
         """
-        self.history = {}
+        self._history = {}
 
     @abc.abstractmethod
     def initialize_history(self, model: Union[Model, System]):
@@ -90,26 +102,29 @@ class ModelProbe(Probe):
             if isinstance(system, DynamicSystem):
                 signals[system.state_signal.name] = system.states
 
-        self.history = {name: [] for name in signals.keys()}
+        self._history = {name: [] for name in signals.keys()}
 
     def collect_dynamics(self, model: Model, time: float):
-        if not self.history:
+        if not self._history:
             raise ValueError("History is not initialized. Call initialize_history() first.")
 
         for system in model.systems.values():
             if isinstance(system, DynamicSystem):
                 for name, signal in system.outputs.items():
-                    self.history[name].append(signal.values.copy())
-                self.history[system.state_signal.name].append(system.states.copy())
+                    signal_sample = numpy.stack([time * numpy.ones_like(signal.values), signal.values.copy()], axis=-1)
+                    self._history[name].append(signal_sample)
+                state_sample = numpy.stack([time * numpy.ones_like(system.states), system.states.copy()], axis=-1)
+                self._history[system.state_signal.name].append(state_sample)
 
     def collect_statics(self, model: Model, time: float):
-        if not self.history:
+        if not self._history:
             raise ValueError("History is not initialized. Call initialize_history() first.")
 
         for system in model.systems.values():
             if not isinstance(system, DynamicSystem):
                 for name, signal in system.outputs.items():
-                    self.history[name].append(signal.values.copy())
+                    signal_sample = numpy.stack([time * numpy.ones_like(signal.values), signal.values.copy()], axis=-1)
+                    self._history[name].append(signal_sample)
 
 
 class SystemProbe(Probe):
@@ -129,21 +144,24 @@ class SystemProbe(Probe):
         if isinstance(model, DynamicSystem):
             signals[model.state_signal.name] = model.states
 
-        self.history = {name: [] for name in signals.keys()}
+        self._history = {name: [] for name in signals.keys()}
 
     def collect_dynamics(self, model: System, time: float):
-        if not self.history:
+        if not self._history:
             raise ValueError("History is not initialized. Call initialize_history() first.")
 
         if isinstance(model, DynamicSystem):
             for name, signal in model.outputs.items():
-                self.history[name].append(signal.values.copy())
-            self.history[model.state_signal.name].append(model.states.copy())
+                signal_sample = numpy.stack([time * numpy.ones_like(signal.values), signal.values.copy()], axis=-1)
+                self._history[name].append(signal_sample)
+            state_sample = numpy.stack([time * numpy.ones_like(model.states), model.states.copy()], axis=-1)
+            self._history[model.state_signal.name].append(state_sample)
 
     def collect_statics(self, model: System, time: float):
-        if not self.history:
+        if not self._history:
             raise ValueError("History is not initialized. Call initialize_history() first.")
 
         if not isinstance(model, DynamicSystem):
             for name, signal in model.outputs.items():
-                self.history[name].append(signal.values.copy())
+                signal_sample = numpy.stack([time * numpy.ones_like(signal.values), signal.values.copy()], axis=-1)
+                self._history[name].append(signal_sample)

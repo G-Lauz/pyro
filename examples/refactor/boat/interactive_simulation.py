@@ -56,7 +56,7 @@ def plot_signals(history: dict, title: str = "Boat 2D Signals"):
     fig.suptitle(title)
 
     for i, (name, values) in enumerate(history.items()):
-        axes[i].plot(values)
+        axes[i].plot(values[:,:,0], values[:,:,1])
         axes[i].set_title(f"Signal {name}")
         axes[i].set_xlabel("Time")
         axes[i].set_ylabel(name)

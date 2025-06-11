@@ -114,7 +114,7 @@ def plot_signals(history: dict, title: str = "Boat 2D Signals"):
     fig.suptitle(title)
 
     for i, (name, values) in enumerate(history.items()):
-        axes[i].plot(values)
+        axes[i].plot(values[:,:,0], values[:,:,1])
         axes[i].set_title(f"Signal {name}")
         axes[i].set_xlabel("Time")
         axes[i].set_ylabel(name)
@@ -177,7 +177,8 @@ def main():
     history = {}
     for system in model.ordered_systems:
         if isinstance(system, DynamicSystem):
-            history[system.state_signal.name] = solution.y[:len(system.state_signal.values), :].T
+            t_repeated = numpy.tile(solution.t, (6, 1)).T  # Shape becomes (10000, 6)
+            history[system.state_signal.name] = numpy.stack((t_repeated, solution.y[:len(system.state_signal.values), :].T), axis=-1)
 
     plot_signals(history, title="Signals from solve_ivp")
 
