@@ -27,37 +27,58 @@ class PygameSimulation(ContinuousSimulation):
             if event.type == self.pygame.QUIT:
                 self.is_running = False
 
-    def run(self, dt=0.1, steps=1000, render=False, callback=None, collect=False, stop_condition: StopCondition = None):
-        self.is_running = True
+    def run(self, dt: float = 0.01, fps:int = 60, steps: int = 1000, render:bool = False, collect: bool = False, stop_condition: StopCondition = None):
+        """
+        Run the simulation using Pygame for rendering and event handling.
 
-        current_time = 0.0
-        self.clock = self.pygame.time.Clock()
-        dt = self.clock.tick(60) / 1000
+        :param dt: The time step for the simulation. (float)
+        :param fps: The frames per second for rendering. (int)
+        :param steps: The maximum number of simulation steps to run. (int)
+        :param render: Whether to render the simulation using Pygame. (bool)
+        :param collect: Whether to collect data during the simulation. (bool)
+            The data will be collected at each simulation step `dt`.
+        :param stop_condition: An optional stop condition to check if the simulation should stop. (StopCondition)
+
+        :return: The collected data if `collect` is True, otherwise None. (dict or None)
+        """
 
         probe = self._create_probe(collect=collect)
         probe.initialize_history(self._model)
 
+        self.clock = self.pygame.time.Clock()
+        sim_time = 0.0
+        accumulated_sim_time = 0.0
+        step_count = 0
+
+        self.is_running = True
         while self.is_running:
+            real_dt = self.clock.tick(fps) / 1000.0
+            accumulated_sim_time += real_dt
+
             self._event_handler()
 
-            probe.collect_dynamics(self._model, time=current_time)
-            self._model.step(time=current_time, dt=dt)
-            probe.collect_statics(self._model, time=current_time)
+            # Fixed-step simulation
+            while accumulated_sim_time >= dt:
 
-            if callback is not None:
-                raise NotImplementedError("Callback is not implemented in PygameSimulation")
-                callback()
+                probe.collect_dynamics(self._model, time=sim_time)
+
+                self._model.step(time=sim_time, dt=dt)
+                sim_time += dt
+                step_count += 1
+
+                probe.collect_statics(self._model, time=sim_time)
+
+                accumulated_sim_time -= dt
+
+                # Stop condition check
+                if stop_condition is not None and stop_condition.is_met(self._model):
+                    self.is_running = False
+                    break
 
             if render:
                 # TODO: won't work with Model, only with System
                 # self.renderer.render(self._model.state_signal, self._model.inputs["u"], self._model.outputs["y"])
                 # self.renderer.render(self._model.systems["Boat 2D"].state_signal, self._model.systems["Boat 2D"].inputs["u"], self._model.systems["Boat 2D"].outputs["y"])
                 self.renderer.render(self._model.systems["Boat 2D"])
-
-            dt = self.clock.tick(60) / 1000
-            current_time += dt
-
-            if stop_condition is not None and stop_condition.is_met(self._model):
-                self.is_running = False
 
         return probe.history if collect else None

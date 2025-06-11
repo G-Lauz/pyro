@@ -110,7 +110,7 @@ def main():
     renderer = BoatRenderer(geometry=geometry)
 
     simulation = PygameSimulation(model=model, renderer=renderer)
-    history = simulation.run(render=True, collect=True)
+    history = simulation.run(dt=0.01, render=True, collect=True)
 
     plot_signals(history, title="Signals from Pygame Simulation")
     plt.show()
