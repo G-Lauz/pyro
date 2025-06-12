@@ -17,7 +17,36 @@ class BoatFrameCamera(Camera):
         # To rotate the world towards the top of the screen
         self.heading_offset = -numpy.pi / 2
 
-    def project(self, system: MechanicalSystem, world_pts: numpy.ndarray) -> numpy.ndarray:
+    def apply_reference_frame(self, points: numpy.ndarray, positions: numpy.ndarray, scale, offset) -> numpy.ndarray:
+        """
+        This frame is relative to the center of the screen with a rotation making the x-axis point upwards.
+        """
+        # Rotate the world points to face the top of the screen
+        rotation_matrix = Transformation2D.rotation_matrix(self.heading_offset)
+        rotated_pts = Transformation2D.transform_points(rotation_matrix, points)
+
+        # Scale and translate the points to fit the screen
+        screen_pts = rotated_pts * scale + offset
+
+        return screen_pts
+    
+    def apply_world_frame(self, points: numpy.ndarray, positions: numpy.ndarray, scale, offset) -> numpy.ndarray:
+        """
+        This frame is relative to the world coordinates, translation and rotation are applied based on the boat's position and heading.
+        """
+        rotation_matrix = Transformation2D.rotation_matrix(self.heading_offset - positions[2])
+        rotated_pts = Transformation2D.transform_points(rotation_matrix, points)
+
+        translation = Transformation2D.transform_points(rotation_matrix, positions[:2].reshape(1, -1)).reshape(-1)
+
+        translation_matrix = Transformation2D.translation_matrix(-translation)
+        transformed_pts = Transformation2D.transform_points(translation_matrix, rotated_pts)
+
+        screen_pts = transformed_pts * scale + offset
+
+        return screen_pts
+
+    def project(self, system: MechanicalSystem, points: numpy.ndarray, frame="world") -> numpy.ndarray:
         """
         Project world points to screen coordinates based on the boat's position and orientation.
         """
@@ -34,12 +63,12 @@ class BoatFrameCamera(Camera):
         scale = min(self.screen_size / domain_range)
         offset = self.screen_size // 2
 
-        # Rotate the world points to face the top of the screen
-        rotation_matrix = Transformation2D.rotation_matrix(self.heading_offset)
-        rotated_pts = Transformation2D.transform_points(rotation_matrix, world_pts)
-
-        # Scale and translate the points to fit the screen
-        screen_pts = rotated_pts * scale + offset
+        if frame == "reference":
+            screen_pts = self.apply_reference_frame(points, positions, scale, offset)
+        elif frame == "world":
+            screen_pts = self.apply_world_frame(points, positions, scale, offset)
+        else:
+            raise ValueError(f"Unknown frame type: {frame}. Use 'reference' or 'world'.")
 
         return screen_pts
 
@@ -53,7 +82,7 @@ class BoatComponent(Component):
 
     def render(self, system: MechanicalSystem, engine: PygameRenderingEngine, camera: Camera, **kwargs):
         world_points = self.geometry.shape
-        screen_points = camera.project(system, world_points)
+        screen_points = camera.project(system, world_points, frame="reference")
         engine.draw_polygon(screen_points, self.boat_color)
 
 
@@ -190,7 +219,7 @@ class ForceComponent(Component):
         transformation_matrix = Transformation2D.translate_rotate_matrix(offset, force_direction)
         arrow_points = Transformation2D.transform_points(transformation_matrix, arrow_points)
 
-        arrow_points = camera.project(system, arrow_points)
+        arrow_points = camera.project(system, arrow_points, frame="reference")
 
         engine.draw_lines(arrow_points, color=self.force_color, width=3)
 
