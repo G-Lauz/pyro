@@ -43,8 +43,18 @@ class BoatDynamics(MechanicalDynamics):
         return numpy.zeros(self.dof)
 
     def dissipative_forces(self, states: MechanicalStateSignal):
+        relative_dx = states.velocity[0]
+        relative_dy = states.velocity[1]
+        dtheta = states.velocity[2]
+
+        relative_velocity = numpy.array([relative_dx, relative_dy, dtheta])
+
+        squared_relative_velocity = relative_dx**2 + relative_dy**2
+
         # Linear damping
-        linear_damping = states.velocity * self.linear_damping
+        alpha = 0.35
+        relative_current_speed = numpy.sqrt(squared_relative_velocity)
+        linear_damping = relative_velocity * self.linear_damping * numpy.exp(-alpha * relative_current_speed)
 
         dx = states.velocity[0]
         dy = states.velocity[1]
@@ -58,6 +68,9 @@ class BoatDynamics(MechanicalDynamics):
         fx = -0.5 * self.water_density * self.frontal_area * Cx * squared_relative_speed
         fy = -0.5 * self.water_density * self.lateral_area * Cy * squared_relative_speed
         mz = -0.5 * self.water_density * self.lateral_area * self.length_over_all * Cm * squared_relative_speed
+
+        N_rr = -0.52
+        mz = -mz - N_rr * self.water_density * numpy.abs(dtheta) * dtheta
 
         quadratic_damping = numpy.array([fx, fy, mz])
 

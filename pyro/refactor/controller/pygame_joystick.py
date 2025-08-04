@@ -44,9 +44,29 @@ class PygameJoystickController(StaticSystem):
         for joystick in self.joysticks:
             # XBox 360 Left Stick (left -> right: axis 0, up -> down: axis 1)
             # See https://www.pygame.org/docs/ref/joystick.html#xbox-360-controller-pygame-2-x for more information
-            x_force = joystick.get_axis(0) * (input_upper_bound[1] - input_lower_bound[1]) * 0.5
-            y_force = joystick.get_axis(1) * (input_upper_bound[0] - input_lower_bound[0]) * 0.5
-            input_force = numpy.array([-y_force, -x_force])
+            # x_raw = joystick.get_axis(0)
+            # y_raw = joystick.get_axis(1)
+            # angle = numpy.arctan2(-x_raw, -y_raw)
+
+            # thrust = (joystick.get_axis(5) + 1) / 2  # Right trigger for thrust [0, 1]
+
+            # # Convert polar (thrust, angle) to Cartesian (x, y)
+            # x_force = (thrust * numpy.cos(angle) * (input_upper_bound[0] - input_lower_bound[0]) * 0.5)
+            # y_force = (thrust * numpy.sin(angle) * (input_upper_bound[1] - input_lower_bound[1]) * 0.5)
+            # input_force = numpy.array([x_force, y_force])
+
+            x_raw = joystick.get_axis(0)
+
+            deadzone = 0.1
+            if abs(x_raw) < deadzone:
+                x_raw = 0.0
+
+            thrust = (joystick.get_axis(5) + 1) / 2  # Right trigger for thrust [0, 1]
+
+            target_surge = input_upper_bound[0] * thrust
+            target_yaw_rate = x_raw * (input_upper_bound[1] - input_lower_bound[1]) * 0.5
+
+            input_force = numpy.array([target_surge, target_yaw_rate])
 
         return input_force
 
